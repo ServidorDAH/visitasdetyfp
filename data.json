@@ -1,5 +1,10 @@
 {
-  "people": [],
+  "people": [
+    {
+      "id": "pmvi6q5pj5jlx4",
+      "name": "Diego Herrera"
+    }
+  ],
   "places": [],
   "visits": [],
   "settings": {
