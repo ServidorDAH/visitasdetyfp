@@ -67,7 +67,14 @@
       "name": "ESCUELA AGROTECNICA JUAN B. ALBERDI"
     }
   ],
-  "visits": [],
+  "visits": [
+    {
+      "id": "mvi7w4q89dll4",
+      "personId": "pmvi6qrx33nbov",
+      "placeId": "lmvi7v99kq6qeh",
+      "date": "2026-10-22"
+    }
+  ],
   "settings": {
     "blockWeeks": 2,
     "scope": "persona"
