@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nuestras Salidas</title>
+<style>
+:root{
+  --bg:#f6f4ef; --card:#ffffff; --text:#22211f; --muted:#6f6b63; --line:#e3dfd6;
+  --accent:#2f6f5e; --accent-soft:#dcebe6; --warn:#b5651d; --warn-soft:#f6e6d6;
+  --bad:#b23b3b; --bad-soft:#f5dede; --ok:#2f6f5e;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#161716; --card:#202220; --text:#ecebe7; --muted:#a19d94; --line:#33362f;
+    --accent:#6cc2a8; --accent-soft:#1f3a33; --warn:#e3a364; --warn-soft:#3d2c1c;
+    --bad:#e57b7b; --bad-soft:#3d2121; --ok:#6cc2a8;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{padding:20px 16px 8px;max-width:900px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:12px;justify-content:space-between}
+h1{margin:0;font-size:1.5rem}
+#status{font-size:.85rem;color:var(--muted)}
+nav{max-width:900px;margin:0 auto;padding:0 16px;display:flex;gap:6px;flex-wrap:wrap}
+nav button{background:transparent;border:1px solid var(--line);color:var(--text);padding:7px 14px;border-radius:999px;cursor:pointer;font:inherit}
+nav button.active{background:var(--accent);border-color:var(--accent);color:#fff}
+main{max-width:900px;margin:0 auto;padding:16px}
+section{display:none}
+section.active{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+h2{margin:0 0 12px;font-size:1.1rem}
+label{display:block;font-size:.85rem;color:var(--muted);margin-bottom:4px}
+input,select,textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);font:inherit}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:12px}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:10px 16px;font:inherit;cursor:pointer}
+.btn.sec{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.small{padding:4px 10px;font-size:.85rem}
+.btn.danger{background:transparent;color:var(--bad);border:1px solid var(--bad)}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);font-size:.92rem}
+th{color:var(--muted);font-weight:600}
+.tbl{overflow-x:auto}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.8rem;white-space:nowrap}
+.pill.ok{background:var(--accent-soft);color:var(--ok)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.sugg{display:flex;flex-wrap:wrap;gap:8px}
+.sugg button{border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:10px;padding:8px 12px;cursor:pointer;font:inherit;text-align:left}
+.sugg button small{display:block;color:var(--muted);font-size:.78rem}
+.sugg button.blocked{opacity:.5}
+.muted{color:var(--muted);font-size:.88rem}
+.msg{padding:10px 12px;border-radius:8px;margin-top:10px;font-size:.92rem}
+.msg.bad{background:var(--bad-soft);color:var(--bad)}
+.msg.ok{background:var(--accent-soft);color:var(--ok)}
+.inline{display:flex;gap:8px}
+.inline input{flex:1}
+</style>
+</head>
+<body>
+<header>
+  <h1>🗺️ Nuestras Salidas</h1>
+  <span id="status">Cargando…</span>
+</header>
+<nav>
+  <button data-tab="cargar" class="active">Cargar salida</button>
+  <button data-tab="historial">Historial</button>
+  <button data-tab="lugares">Lugares</button>
+  <button data-tab="personas">Personas</button>
+  <button data-tab="ajustes">Ajustes</button>
+</nav>
+
+<main>
+  <!-- CARGAR -->
+  <section id="cargar" class="active">
+    <div class="card">
+      <h2>Nueva salida</h2>
+      <div class="row">
+        <div><label>Persona</label><select id="fPerson"></select></div>
+        <div><label>Fecha</label><input type="date" id="fDate"></div>
+        <div><label>Lugar</label><select id="fPlace"></select></div>
+      </div>
+      <button class="btn" id="btnAddVisit">Guardar salida</button>
+      <div id="visitMsg"></div>
+    </div>
+    <div class="card">
+      <h2>Sugerencias para esa fecha</h2>
+      <p class="muted" id="ruleText"></p>
+      <div class="sugg" id="suggestions"></div>
+    </div>
+  </section>
+
+  <!-- HISTORIAL -->
+  <section id="historial">
+    <div class="card">
+      <h2>Historial</h2>
+      <div class="row">
+        <div><label>Filtrar por persona</label><select id="hPerson"></select></div>
+        <div><label>Filtrar por lugar</label><select id="hPlace"></select></div>
+      </div>
+      <div class="tbl"><table>
+        <thead><tr><th>Fecha</th><th>Persona</th><th>Lugar</th><th></th></tr></thead>
+        <tbody id="histBody"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- LUGARES -->
+  <section id="lugares">
+    <div class="card">
+      <h2>Agregar lugar</h2>
+      <div class="inline"><input id="newPlace" placeholder="Nombre del lugar"><button class="btn" id="btnAddPlace">Agregar</button></div>
+    </div>
+    <div class="card">
+      <h2>Lugares</h2>
+      <div class="tbl"><table>
+        <thead><tr><th>Lugar</th><th>Veces</th><th>Última vez</th><th>Estado hoy</th><th></th></tr></thead>
+        <tbody id="placesBody"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- PERSONAS -->
+  <section id="personas">
+    <div class="card">
+      <h2>Agregar persona</h2>
+      <div class="inline"><input id="newPerson" placeholder="Nombre"><button class="btn" id="btnAddPerson">Agregar</button></div>
+    </div>
+    <div class="card">
+      <h2>Personas</h2>
+      <div class="tbl"><table>
+        <thead><tr><th>Nombre</th><th>Salidas</th><th>Última salida</th><th></th></tr></thead>
+        <tbody id="peopleBody"></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- AJUSTES -->
+  <section id="ajustes">
+    <div class="card">
+      <h2>Regla para no repetir</h2>
+      <div class="row">
+        <div>
+          <label>Semanas bloqueadas (contando la de la salida)</label>
+          <select id="sWeeks">
+            <option value="1">1 – solo esa semana</option>
+            <option value="2">2 – esa semana y la siguiente</option>
+            <option value="3">3 semanas</option>
+            <option value="4">4 semanas</option>
+          </select>
+        </div>
+        <div>
+          <label>Aplicar la regla</label>
+          <select id="sScope">
+            <option value="persona">Por persona (cada uno no repite)</option>
+            <option value="grupo">Para todo el grupo</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn" id="btnSaveRule">Guardar regla</button>
+    </div>
+    <div class="card">
+      <h2>Conexión con GitHub</h2>
+      <p class="muted">Estos datos quedan guardados solo en este navegador. El token no se sube al repo.</p>
+      <div class="row">
+        <div><label>Usuario u organización</label><input id="gOwner" placeholder="tu-usuario"></div>
+        <div><label>Repositorio</label><input id="gRepo" placeholder="salidas"></div>
+      </div>
+      <div class="row">
+        <div><label>Rama</label><input id="gBranch" placeholder="main"></div>
+        <div><label>Archivo</label><input id="gPath" placeholder="data.json"></div>
+      </div>
+      <div class="row">
+        <div><label>Token (Contents: read & write)</label><input id="gToken" type="password" placeholder="github_pat_…"></div>
+      </div>
+      <div class="inline">
+        <button class="btn" id="btnSaveGh">Guardar y conectar</button>
+        <button class="btn sec" id="btnForget">Olvidar token</button>
+      </div>
+      <div id="ghMsg"></div>
+    </div>
+    <div class="card">
+      <h2>Copia de seguridad</h2>
+      <div class="inline">
+        <button class="btn sec" id="btnExport">Descargar JSON</button>
+        <label class="btn sec" style="margin:0;color:var(--text)">Importar JSON<input type="file" id="fileImport" accept=".json" hidden></label>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ================== Estado ================== */
+const LS_KEY = "salidas_gh_config";
+const DAY = 864e5;
+let data = { people: [], places: [], visits: [], settings: { blockWeeks: 2, scope: "persona" } };
+let sha = null;
+let gh = loadGh();
+let saveTimer = null;
+
+const $ = id => document.getElementById(id);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function loadGh(){ try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch { return {}; } }
+function storeGh(){ try { localStorage.setItem(LS_KEY, JSON.stringify(gh)); } catch {} }
+function setStatus(t){ $("status").textContent = t; }
+
+/* ================== Fechas y semanas (lunes a domingo) ================== */
+function todayStr(){ const d = new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function weekIndex(s){
+  const [y,m,d] = s.split("-").map(Number);
+  const t = Date.UTC(y, m-1, d);
+  const dow = (new Date(t).getUTCDay() + 6) % 7;      // 0 = lunes
+  return Math.floor((t - dow*DAY - Date.UTC(1970,0,5)) / (7*DAY));
+}
+function mondayOfWeek(w){ const t = new Date(Date.UTC(1970,0,5) + w*7*DAY); return t.toISOString().slice(0,10); }
+function fmt(s){ if(!s) return "—"; const [y,m,d] = s.split("-"); return `${d}/${m}/${y}`; }
+
+/* ================== Regla de no repetir ================== */
+// Devuelve {blocked, until, lastDate}
+function availability(placeId, personId, dateStr){
+  const { blockWeeks, scope } = data.settings;
+  const target = weekIndex(dateStr);
+  let blockedUntil = null, conflict = null;
+  for (const v of data.visits){
+    if (v.placeId !== placeId) continue;
+    if (scope === "persona" && v.personId !== personId) continue;
+    const w = weekIndex(v.date);
+    if (Math.abs(target - w) < blockWeeks){
+      const free = w + blockWeeks;
+      if (blockedUntil === null || free > blockedUntil){ blockedUntil = free; conflict = v; }
+    }
+  }
+  return { blocked: blockedUntil !== null, until: blockedUntil !== null ? mondayOfWeek(blockedUntil) : null, conflict };
+}
+const placeName = id => (data.places.find(p => p.id === id) || {}).name || "(borrado)";
+const personName = id => (data.people.find(p => p.id === id) || {}).name || "(borrado)";
+const countPlace = (id, personId) => data.visits.filter(v => v.placeId === id && (!personId || v.personId === personId)).length;
+const lastDate = list => list.reduce((a, v) => (!a || v.date > a) ? v.date : a, null);
+
+/* ================== GitHub ================== */
+function b64encode(str){
+  const bytes = new TextEncoder().encode(str); let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i+0x8000));
+  return btoa(bin);
+}
+function b64decode(b64){
+  const bin = atob(b64.replace(/\n/g,""));
+  return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0)));
+}
+function ghUrl(){ return `https://api.github.com/repos/${gh.owner}/${gh.repo}/contents/${gh.path || "data.json"}`; }
+const ghReady = () => gh.owner && gh.repo && gh.token;
+
+async function loadData(){
+  setStatus("Cargando…");
+  try {
+    if (ghReady()){
+      const r = await fetch(ghUrl() + "?ref=" + encodeURIComponent(gh.branch || "main") + "&t=" + Date.now(), {
+        headers: { Authorization: "Bearer " + gh.token, Accept: "application/vnd.github+json" }
+      });
+      if (r.status === 404){ sha = null; setStatus("Conectado · data.json se creará al guardar"); render(); return; }
+      if (!r.ok) throw new Error("GitHub respondió " + r.status);
+      const j = await r.json();
+      sha = j.sha;
+      applyData(JSON.parse(b64decode(j.content)));
+      setStatus("Conectado a GitHub ✓");
+    } else {
+      const r = await fetch("data.json?t=" + Date.now());
+      if (r.ok) applyData(await r.json());
+      setStatus("Solo lectura · configurá el token en Ajustes para guardar");
+    }
+  } catch (e){
+    setStatus("Error al cargar: " + e.message);
+  }
+  render();
+}
+function applyData(d){
+  data = Object.assign({ people: [], places: [], visits: [] }, d);
+  data.settings = Object.assign({ blockWeeks: 2, scope: "persona" }, d.settings || {});
+}
+
+function persist(){
+  render();
+  if (!ghReady()){ setStatus("⚠️ Cambio sin guardar · falta configurar GitHub"); return; }
+  setStatus("Guardando…");
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveToGitHub, 600);
+}
+async function saveToGitHub(retry = true){
+  try {
+    const body = { message: "Actualizar salidas " + new Date().toLocaleString("es-AR"), content: b64encode(JSON.stringify(data, null, 2)), branch: gh.branch || "main" };
+    if (sha) body.sha = sha;
+    const r = await fetch(ghUrl(), {
+      method: "PUT",
+      headers: { Authorization: "Bearer " + gh.token, Accept: "application/vnd.github+json", "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    if ((r.status === 409 || r.status === 422) && retry){
+      // Alguien guardó antes: tomamos el sha nuevo y reintentamos con nuestros datos
+      const g = await fetch(ghUrl() + "?ref=" + encodeURIComponent(gh.branch || "main") + "&t=" + Date.now(), { headers: { Authorization: "Bearer " + gh.token } });
+      if (g.ok){ sha = (await g.json()).sha; return saveToGitHub(false); }
+    }
+    if (!r.ok) throw new Error("GitHub respondió " + r.status);
+    sha = (await r.json()).content.sha;
+    setStatus("Guardado en GitHub ✓ " + new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }));
+  } catch (e){
+    setStatus("❌ No se pudo guardar: " + e.message);
+  }
+}
+
+/* ================== Render ================== */
+function options(list, withAll){
+  return (withAll ? `<option value="">Todos</option>` : "") +
+    list.slice().sort((a,b) => a.name.localeCompare(b.name)).map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join("");
+}
+function keep(sel, html){ const v = sel.value; sel.innerHTML = html; if ([...sel.options].some(o => o.value === v)) sel.value = v; }
+
+function render(){
+  keep($("fPerson"), data.people.length ? options(data.people) : `<option value="">— agregá personas —</option>`);
+  keep($("hPerson"), options(data.people, true));
+  keep($("hPlace"), options(data.places, true));
+  $("sWeeks").value = data.settings.blockWeeks;
+  $("sScope").value = data.settings.scope;
+  renderCargar(); renderHist(); renderPlaces(); renderPeople();
+}
+
+function renderCargar(){
+  const pid = $("fPerson").value, date = $("fDate").value || todayStr();
+  const { blockWeeks, scope } = data.settings;
+  $("ruleText").textContent = `Regla: no repetir un lugar durante ${blockWeeks === 1 ? "la misma semana" : blockWeeks + " semanas (la de la salida y " + (blockWeeks-1 === 1 ? "la siguiente" : "las " + (blockWeeks-1) + " siguientes") + ")"}, ${scope === "persona" ? "por persona" : "para todo el grupo"}. Ordenado por disponibilidad y menos visitas.`;
+
+  const rows = data.places.map(p => {
+    const a = availability(p.id, pid, date);
+    return { p, a, n: countPlace(p.id, scope === "persona" ? pid : null) };
+  }).sort((x, y) => (x.a.blocked - y.a.blocked) || (x.n - y.n) || x.p.name.localeCompare(y.p.name));
+
+  keep($("fPlace"), rows.length
+    ? rows.map(r => `<option value="${r.p.id}">${r.a.blocked ? "⛔ " : "✅ "}${esc(r.p.name)} (${r.n})</option>`).join("")
+    : `<option value="">— agregá lugares —</option>`);
+
+  $("suggestions").innerHTML = rows.length ? rows.map(r => `
+    <button data-place="${r.p.id}" class="${r.a.blocked ? "blocked" : ""}">
+      ${r.a.blocked ? "⛔" : "✅"} ${esc(r.p.name)}
+      <small>${r.n} ${r.n === 1 ? "vez" : "veces"}${r.a.blocked ? " · libre desde " + fmt(r.a.until) : ""}</small>
+    </button>`).join("") : `<p class="muted">Todavía no hay lugares cargados.</p>`;
+}
+
+function renderHist(){
+  const fp = $("hPerson").value, fl = $("hPlace").value;
+  const list = data.visits.filter(v => (!fp || v.personId === fp) && (!fl || v.placeId === fl))
+    .sort((a, b) => b.date.localeCompare(a.date));
+  $("histBody").innerHTML = list.length ? list.map(v => `
+    <tr><td>${fmt(v.date)}</td><td>${esc(personName(v.personId))}</td><td>${esc(placeName(v.placeId))}</td>
+    <td><button class="btn danger small" data-delvisit="${v.id}">Borrar</button></td></tr>`).join("")
+    : `<tr><td colspan="4" class="muted">Sin salidas registradas.</td></tr>`;
+}
+
+function renderPlaces(){
+  const today = todayStr();
+  const list = data.places.slice().sort((a, b) => countPlace(b.id) - countPlace(a.id) || a.name.localeCompare(b.name));
+  $("placesBody").innerHTML = list.length ? list.map(p => {
+    const vs = data.visits.filter(v => v.placeId === p.id);
+    // estado para el grupo (cualquier persona)
+    const target = weekIndex(today);
+    const recent = vs.some(v => Math.abs(target - weekIndex(v.date)) < data.settings.blockWeeks);
+    const pill = recent ? `<span class="pill warn">Visitado hace poco</span>` : `<span class="pill ok">Libre</span>`;
+    return `<tr><td>${esc(p.name)}</td><td>${vs.length}</td><td>${fmt(lastDate(vs))}</td><td>${pill}</td>
+      <td><button class="btn danger small" data-delplace="${p.id}">Borrar</button></td></tr>`;
+  }).join("") : `<tr><td colspan="5" class="muted">Sin lugares.</td></tr>`;
+}
+
+function renderPeople(){
+  const list = data.people.slice().sort((a, b) => a.name.localeCompare(b.name));
+  $("peopleBody").innerHTML = list.length ? list.map(p => {
+    const vs = data.visits.filter(v => v.personId === p.id);
+    return `<tr><td>${esc(p.name)}</td><td>${vs.length}</td><td>${fmt(lastDate(vs))}</td>
+      <td><button class="btn danger small" data-delperson="${p.id}">Borrar</button></td></tr>`;
+  }).join("") : `<tr><td colspan="4" class="muted">Sin personas.</td></tr>`;
+}
+
+/* ================== Acciones ================== */
+document.querySelectorAll("nav button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("nav button").forEach(x => x.classList.toggle("active", x === b));
+  document.querySelectorAll("section").forEach(s => s.classList.toggle("active", s.id === b.dataset.tab));
+});
+
+$("fDate").value = todayStr();
+["fPerson", "fDate"].forEach(id => $(id).addEventListener("change", renderCargar));
+["hPerson", "hPlace"].forEach(id => $(id).addEventListener("change", renderHist));
+
+$("suggestions").onclick = e => { const b = e.target.closest("button[data-place]"); if (b) $("fPlace").value = b.dataset.place; };
+
+function showMsg(el, text, kind){ $(el).innerHTML = `<div class="msg ${kind}">${esc(text)}</div>`; }
+
+$("btnAddVisit").onclick = () => {
+  const personId = $("fPerson").value, placeId = $("fPlace").value, date = $("fDate").value;
+  if (!personId || !placeId || !date) return showMsg("visitMsg", "Completá persona, fecha y lugar.", "bad");
+  const a = availability(placeId, personId, date);
+  if (a.blocked){
+    const who = data.settings.scope === "persona" ? personName(personId) : personName(a.conflict.personId);
+    if (!confirm(`⚠️ ${placeName(placeId)} ya fue visitado por ${who} el ${fmt(a.conflict.date)}.\nQueda libre desde el ${fmt(a.until)}.\n\n¿Guardar igual?`)) return;
+  }
+  data.visits.push({ id: uid(), personId, placeId, date });
+  showMsg("visitMsg", `Guardado: ${personName(personId)} → ${placeName(placeId)} (${fmt(date)})`, "ok");
+  persist();
+};
+
+$("btnAddPlace").onclick = () => {
+  const n = $("newPlace").value.trim(); if (!n) return;
+  if (data.places.some(p => p.name.toLowerCase() === n.toLowerCase())) return alert("Ese lugar ya existe.");
+  data.places.push({ id: uid(), name: n }); $("newPlace").value = ""; persist();
+};
+$("btnAddPerson").onclick = () => {
+  const n = $("newPerson").value.trim(); if (!n) return;
+  if (data.people.some(p => p.name.toLowerCase() === n.toLowerCase())) return alert("Esa persona ya existe.");
+  data.people.push({ id: uid(), name: n }); $("newPerson").value = ""; persist();
+};
+$("newPlace").onkeydown = e => e.key === "Enter" && $("btnAddPlace").click();
+$("newPerson").onkeydown = e => e.key === "Enter" && $("btnAddPerson").click();
+
+document.body.addEventListener("click", e => {
+  const t = e.target;
+  if (t.dataset.delvisit && confirm("¿Borrar esta salida?")){ data.visits = data.visits.filter(v => v.id !== t.dataset.delvisit); persist(); }
+  if (t.dataset.delplace){
+    const n = countPlace(t.dataset.delplace);
+    if (confirm(`¿Borrar el lugar${n ? " y sus " + n + " salidas" : ""}?`)){
+      data.places = data.places.filter(p => p.id !== t.dataset.delplace);
+      data.visits = data.visits.filter(v => v.placeId !== t.dataset.delplace); persist();
+    }
+  }
+  if (t.dataset.delperson){
+    const n = data.visits.filter(v => v.personId === t.dataset.delperson).length;
+    if (confirm(`¿Borrar a la persona${n ? " y sus " + n + " salidas" : ""}?`)){
+      data.people = data.people.filter(p => p.id !== t.dataset.delperson);
+      data.visits = data.visits.filter(v => v.personId !== t.dataset.delperson); persist();
+    }
+  }
+});
+
+$("btnSaveRule").onclick = () => {
+  data.settings.blockWeeks = Number($("sWeeks").value);
+  data.settings.scope = $("sScope").value;
+  persist(); alert("Regla guardada.");
+};
+
+["Owner","Repo","Branch","Path","Token"].forEach(k => $("g"+k).value = gh[k.toLowerCase()] || "");
+$("btnSaveGh").onclick = async () => {
+  gh = { owner: $("gOwner").value.trim(), repo: $("gRepo").value.trim(), branch: $("gBranch").value.trim() || "main",
+         path: $("gPath").value.trim() || "data.json", token: $("gToken").value.trim() };
+  storeGh();
+  await loadData();
+  showMsg("ghMsg", $("status").textContent, $("status").textContent.includes("Error") ? "bad" : "ok");
+};
+$("btnForget").onclick = () => { gh.token = ""; storeGh(); $("gToken").value = ""; setStatus("Token borrado de este navegador"); };
+
+$("btnExport").onclick = () => {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+  a.download = "data.json"; a.click();
+};
+$("fileImport").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try { applyData(JSON.parse(await f.text())); persist(); alert("Datos importados."); } catch { alert("El archivo no es un JSON válido."); }
+};
+
+loadData();
+</script>
+</body>
+</html>
