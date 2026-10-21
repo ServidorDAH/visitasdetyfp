@@ -57,7 +57,12 @@
       "name": "Carlos Infante"
     }
   ],
-  "places": [],
+  "places": [
+    {
+      "id": "lmvi7v99kq6qeh",
+      "name": "ESCUELA TECNICA N°1 - PROF. RAFAEL MARINO"
+    }
+  ],
   "visits": [],
   "settings": {
     "blockWeeks": 2,
