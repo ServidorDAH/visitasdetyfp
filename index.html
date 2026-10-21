@@ -29,9 +29,10 @@ main{max-width:900px;margin:0 auto;padding:16px}
 section{display:none}
 section.active{display:block}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.card.alert{border-color:var(--warn);background:var(--warn-soft)}
 h2{margin:0 0 12px;font-size:1.1rem}
 label{display:block;font-size:.85rem;color:var(--muted);margin-bottom:4px}
-input,select,textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);font:inherit}
+input,select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);font:inherit}
 .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:12px}
 .btn{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:10px 16px;font:inherit;cursor:pointer}
 .btn.sec{background:transparent;color:var(--text);border:1px solid var(--line)}
@@ -43,18 +44,18 @@ th{color:var(--muted);font-weight:600}
 .tbl{overflow-x:auto}
 .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.8rem;white-space:nowrap}
 .pill.ok{background:var(--accent-soft);color:var(--ok)}
-.pill.bad{background:var(--bad-soft);color:var(--bad)}
 .pill.warn{background:var(--warn-soft);color:var(--warn)}
 .sugg{display:flex;flex-wrap:wrap;gap:8px}
 .sugg button{border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:10px;padding:8px 12px;cursor:pointer;font:inherit;text-align:left}
 .sugg button small{display:block;color:var(--muted);font-size:.78rem}
 .sugg button.blocked{opacity:.5}
+.sugg button.sel{border-color:var(--accent);outline:2px solid var(--accent)}
 .muted{color:var(--muted);font-size:.88rem}
 .msg{padding:10px 12px;border-radius:8px;margin-top:10px;font-size:.92rem}
 .msg.bad{background:var(--bad-soft);color:var(--bad)}
 .msg.ok{background:var(--accent-soft);color:var(--ok)}
-.inline{display:flex;gap:8px}
-.inline input{flex:1}
+.inline{display:flex;gap:8px;flex-wrap:wrap}
+.inline input{flex:1;min-width:200px}
 </style>
 </head>
 <body>
@@ -65,14 +66,24 @@ th{color:var(--muted);font-weight:600}
 <nav>
   <button data-tab="cargar" class="active">Cargar salida</button>
   <button data-tab="historial">Historial</button>
-  <button data-tab="lugares">Lugares</button>
-  <button data-tab="personas">Personas</button>
+  <button data-tab="resumen">Resumen</button>
+  <button data-tab="nombres">Personas y lugares</button>
   <button data-tab="ajustes">Ajustes</button>
 </nav>
 
 <main>
   <!-- CARGAR -->
   <section id="cargar" class="active">
+    <div class="card alert" id="tokenCard" style="display:none">
+      <h2>🔑 Pegá tu token para poder guardar</h2>
+      <p class="muted">Se pide una sola vez por navegador. Queda guardado solo en este dispositivo.</p>
+      <div class="inline">
+        <input id="tokenQuick" type="password" placeholder="github_pat_…">
+        <button class="btn" id="btnTokenQuick">Conectar</button>
+      </div>
+      <div id="tokenMsg"></div>
+    </div>
+
     <div class="card">
       <h2>Nueva salida</h2>
       <div class="row">
@@ -84,7 +95,7 @@ th{color:var(--muted);font-weight:600}
       <div id="visitMsg"></div>
     </div>
     <div class="card">
-      <h2>Sugerencias para esa fecha</h2>
+      <h2>Lugares para esa persona y fecha</h2>
       <p class="muted" id="ruleText"></p>
       <div class="sugg" id="suggestions"></div>
     </div>
@@ -105,38 +116,56 @@ th{color:var(--muted);font-weight:600}
     </div>
   </section>
 
-  <!-- LUGARES -->
-  <section id="lugares">
-    <div class="card">
-      <h2>Agregar lugar</h2>
-      <div class="inline"><input id="newPlace" placeholder="Nombre del lugar"><button class="btn" id="btnAddPlace">Agregar</button></div>
-    </div>
+  <!-- RESUMEN -->
+  <section id="resumen">
     <div class="card">
       <h2>Lugares</h2>
       <div class="tbl"><table>
-        <thead><tr><th>Lugar</th><th>Veces</th><th>Última vez</th><th>Estado hoy</th><th></th></tr></thead>
+        <thead><tr><th>Lugar</th><th>Veces</th><th>Última vez</th><th>Estado hoy</th></tr></thead>
         <tbody id="placesBody"></tbody>
       </table></div>
-    </div>
-  </section>
-
-  <!-- PERSONAS -->
-  <section id="personas">
-    <div class="card">
-      <h2>Agregar persona</h2>
-      <div class="inline"><input id="newPerson" placeholder="Nombre"><button class="btn" id="btnAddPerson">Agregar</button></div>
     </div>
     <div class="card">
       <h2>Personas</h2>
       <div class="tbl"><table>
-        <thead><tr><th>Nombre</th><th>Salidas</th><th>Última salida</th><th></th></tr></thead>
+        <thead><tr><th>Nombre</th><th>Salidas</th><th>Última salida</th><th>Último lugar</th></tr></thead>
         <tbody id="peopleBody"></tbody>
       </table></div>
     </div>
   </section>
 
+  <!-- PERSONAS Y LUGARES -->
+  <section id="nombres">
+    <div class="card">
+      <h2>👤 Personas</h2>
+      <div class="inline" style="margin-bottom:12px">
+        <input id="newPerson" placeholder="Nombre de la persona">
+        <button class="btn" id="btnAddPerson">Agregar</button>
+      </div>
+      <div class="tbl"><table><tbody id="editPeople"></tbody></table></div>
+    </div>
+    <div class="card">
+      <h2>📍 Lugares</h2>
+      <div class="inline" style="margin-bottom:12px">
+        <input id="newPlace" placeholder="Nombre del lugar">
+        <button class="btn" id="btnAddPlace">Agregar</button>
+      </div>
+      <div class="tbl"><table><tbody id="editPlaces"></tbody></table></div>
+    </div>
+  </section>
+
   <!-- AJUSTES -->
   <section id="ajustes">
+    <div class="card">
+      <h2>Token de GitHub</h2>
+      <p class="muted">Guardado solo en este navegador. Repo: <b id="repoInfo"></b></p>
+      <div class="inline">
+        <input id="gToken" type="password" placeholder="github_pat_…">
+        <button class="btn" id="btnSaveGh">Guardar</button>
+        <button class="btn sec" id="btnForget">Olvidar token</button>
+      </div>
+      <div id="ghMsg"></div>
+    </div>
     <div class="card">
       <h2>Regla para no repetir</h2>
       <div class="row">
@@ -160,86 +189,69 @@ th{color:var(--muted);font-weight:600}
       <button class="btn" id="btnSaveRule">Guardar regla</button>
     </div>
     <div class="card">
-      <h2>Conexión con GitHub</h2>
-      <p class="muted">Estos datos quedan guardados solo en este navegador. El token no se sube al repo.</p>
-      <div class="row">
-        <div><label>Usuario u organización</label><input id="gOwner" placeholder="tu-usuario"></div>
-        <div><label>Repositorio</label><input id="gRepo" placeholder="salidas"></div>
-      </div>
-      <div class="row">
-        <div><label>Rama</label><input id="gBranch" placeholder="main"></div>
-        <div><label>Archivo</label><input id="gPath" placeholder="data.json"></div>
-      </div>
-      <div class="row">
-        <div><label>Token (Contents: read & write)</label><input id="gToken" type="password" placeholder="github_pat_…"></div>
-      </div>
-      <div class="inline">
-        <button class="btn" id="btnSaveGh">Guardar y conectar</button>
-        <button class="btn sec" id="btnForget">Olvidar token</button>
-      </div>
-      <div id="ghMsg"></div>
-    </div>
-    <div class="card">
       <h2>Copia de seguridad</h2>
-      <div class="inline">
-        <button class="btn sec" id="btnExport">Descargar JSON</button>
-        <label class="btn sec" style="margin:0;color:var(--text)">Importar JSON<input type="file" id="fileImport" accept=".json" hidden></label>
-      </div>
+      <button class="btn sec" id="btnExport">Descargar JSON</button>
     </div>
   </section>
 </main>
 
 <script>
-/* ================== Estado ================== */
-const LS_KEY = "salidas_gh_config";
+/* ===== CONFIGURACIÓN DEL REPO (completar una vez) ===== */
+const CONFIG = {
+  owner:  "TU-USUARIO",   // usuario de GitHub
+  repo:   "salidas",      // nombre del repositorio
+  branch: "main",
+  path:   "data.json"
+};
+/* ====================================================== */
+
+const LS_TOKEN = "salidas_gh_token";
 const DAY = 864e5;
 let data = { people: [], places: [], visits: [], settings: { blockWeeks: 2, scope: "persona" } };
 let sha = null;
-let gh = loadGh();
+let token = "";
+try { token = localStorage.getItem(LS_TOKEN) || ""; } catch {}
 let saveTimer = null;
 
 const $ = id => document.getElementById(id);
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-
-function loadGh(){ try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch { return {}; } }
-function storeGh(){ try { localStorage.setItem(LS_KEY, JSON.stringify(gh)); } catch {} }
 function setStatus(t){ $("status").textContent = t; }
+function setToken(t){ token = t; try { t ? localStorage.setItem(LS_TOKEN, t) : localStorage.removeItem(LS_TOKEN); } catch {} }
 
-/* ================== Fechas y semanas (lunes a domingo) ================== */
+/* ===== Fechas (semanas de lunes a domingo) ===== */
 function todayStr(){ const d = new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
 function weekIndex(s){
   const [y,m,d] = s.split("-").map(Number);
   const t = Date.UTC(y, m-1, d);
-  const dow = (new Date(t).getUTCDay() + 6) % 7;      // 0 = lunes
+  const dow = (new Date(t).getUTCDay() + 6) % 7;
   return Math.floor((t - dow*DAY - Date.UTC(1970,0,5)) / (7*DAY));
 }
-function mondayOfWeek(w){ const t = new Date(Date.UTC(1970,0,5) + w*7*DAY); return t.toISOString().slice(0,10); }
+function mondayOfWeek(w){ return new Date(Date.UTC(1970,0,5) + w*7*DAY).toISOString().slice(0,10); }
 function fmt(s){ if(!s) return "—"; const [y,m,d] = s.split("-"); return `${d}/${m}/${y}`; }
 
-/* ================== Regla de no repetir ================== */
-// Devuelve {blocked, until, lastDate}
+/* ===== Regla de no repetir ===== */
 function availability(placeId, personId, dateStr){
   const { blockWeeks, scope } = data.settings;
   const target = weekIndex(dateStr);
-  let blockedUntil = null, conflict = null;
+  let until = null, conflict = null;
   for (const v of data.visits){
     if (v.placeId !== placeId) continue;
     if (scope === "persona" && v.personId !== personId) continue;
     const w = weekIndex(v.date);
     if (Math.abs(target - w) < blockWeeks){
       const free = w + blockWeeks;
-      if (blockedUntil === null || free > blockedUntil){ blockedUntil = free; conflict = v; }
+      if (until === null || free > until){ until = free; conflict = v; }
     }
   }
-  return { blocked: blockedUntil !== null, until: blockedUntil !== null ? mondayOfWeek(blockedUntil) : null, conflict };
+  return { blocked: until !== null, until: until !== null ? mondayOfWeek(until) : null, conflict };
 }
-const placeName = id => (data.places.find(p => p.id === id) || {}).name || "(borrado)";
-const personName = id => (data.people.find(p => p.id === id) || {}).name || "(borrado)";
+const placeName = id => (data.places.find(p => p.id === id) || {}).name || "(?)";
+const personName = id => (data.people.find(p => p.id === id) || {}).name || "(?)";
 const countPlace = (id, personId) => data.visits.filter(v => v.placeId === id && (!personId || v.personId === personId)).length;
-const lastDate = list => list.reduce((a, v) => (!a || v.date > a) ? v.date : a, null);
+const latest = list => list.reduce((a, v) => (!a || v.date > a.date) ? v : a, null);
 
-/* ================== GitHub ================== */
+/* ===== GitHub ===== */
 function b64encode(str){
   const bytes = new TextEncoder().encode(str); let bin = "";
   for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i+0x8000));
@@ -249,31 +261,38 @@ function b64decode(b64){
   const bin = atob(b64.replace(/\n/g,""));
   return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0)));
 }
-function ghUrl(){ return `https://api.github.com/repos/${gh.owner}/${gh.repo}/contents/${gh.path || "data.json"}`; }
-const ghReady = () => gh.owner && gh.repo && gh.token;
+const apiUrl = () => `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents/${CONFIG.path}`;
+const authHeaders = () => ({ Authorization: "Bearer " + token, Accept: "application/vnd.github+json" });
+
+async function fetchRemote(){
+  const r = await fetch(apiUrl() + "?ref=" + encodeURIComponent(CONFIG.branch) + "&t=" + Date.now(), { headers: authHeaders() });
+  if (r.status === 401) throw new Error("token inválido o vencido");
+  if (r.status === 404) throw new Error("no encuentro el repo o el archivo (revisá CONFIG y los permisos del token)");
+  if (!r.ok) throw new Error("GitHub respondió " + r.status);
+  return r.json();
+}
 
 async function loadData(){
   setStatus("Cargando…");
   try {
-    if (ghReady()){
-      const r = await fetch(ghUrl() + "?ref=" + encodeURIComponent(gh.branch || "main") + "&t=" + Date.now(), {
-        headers: { Authorization: "Bearer " + gh.token, Accept: "application/vnd.github+json" }
-      });
-      if (r.status === 404){ sha = null; setStatus("Conectado · data.json se creará al guardar"); render(); return; }
-      if (!r.ok) throw new Error("GitHub respondió " + r.status);
-      const j = await r.json();
+    if (token){
+      const j = await fetchRemote();
       sha = j.sha;
       applyData(JSON.parse(b64decode(j.content)));
-      setStatus("Conectado a GitHub ✓");
+      setStatus("Conectado ✓");
     } else {
       const r = await fetch("data.json?t=" + Date.now());
       if (r.ok) applyData(await r.json());
-      setStatus("Solo lectura · configurá el token en Ajustes para guardar");
+      setStatus("Falta el token para guardar");
     }
   } catch (e){
-    setStatus("Error al cargar: " + e.message);
+    setStatus("Error: " + e.message);
+    return false;
+  } finally {
+    $("tokenCard").style.display = token ? "none" : "block";
+    render();
   }
-  render();
+  return true;
 }
 function applyData(d){
   data = Object.assign({ people: [], places: [], visits: [] }, d);
@@ -282,68 +301,86 @@ function applyData(d){
 
 function persist(){
   render();
-  if (!ghReady()){ setStatus("⚠️ Cambio sin guardar · falta configurar GitHub"); return; }
+  if (!token){ setStatus("⚠️ No guardado: falta el token"); $("tokenCard").style.display = "block"; return; }
   setStatus("Guardando…");
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(saveToGitHub, 600);
+  saveTimer = setTimeout(saveToGitHub, 500);
 }
 async function saveToGitHub(retry = true){
   try {
-    const body = { message: "Actualizar salidas " + new Date().toLocaleString("es-AR"), content: b64encode(JSON.stringify(data, null, 2)), branch: gh.branch || "main" };
+    const body = { message: "Salidas " + new Date().toLocaleString("es-AR"), content: b64encode(JSON.stringify(data, null, 2)), branch: CONFIG.branch };
     if (sha) body.sha = sha;
-    const r = await fetch(ghUrl(), {
-      method: "PUT",
-      headers: { Authorization: "Bearer " + gh.token, Accept: "application/vnd.github+json", "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    });
+    const r = await fetch(apiUrl(), { method: "PUT", headers: { ...authHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(body) });
     if ((r.status === 409 || r.status === 422) && retry){
-      // Alguien guardó antes: tomamos el sha nuevo y reintentamos con nuestros datos
-      const g = await fetch(ghUrl() + "?ref=" + encodeURIComponent(gh.branch || "main") + "&t=" + Date.now(), { headers: { Authorization: "Bearer " + gh.token } });
-      if (g.ok){ sha = (await g.json()).sha; return saveToGitHub(false); }
+      sha = (await fetchRemote()).sha;
+      return saveToGitHub(false);
     }
     if (!r.ok) throw new Error("GitHub respondió " + r.status);
     sha = (await r.json()).content.sha;
-    setStatus("Guardado en GitHub ✓ " + new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }));
+    setStatus("Guardado ✓ " + new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }));
   } catch (e){
     setStatus("❌ No se pudo guardar: " + e.message);
   }
 }
 
-/* ================== Render ================== */
+/* ===== Render ===== */
 function options(list, withAll){
   return (withAll ? `<option value="">Todos</option>` : "") +
-    list.slice().sort((a,b) => a.name.localeCompare(b.name)).map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join("");
+    list.map(x => `<option value="${esc(x.id)}">${esc(x.name)}</option>`).join("");
 }
 function keep(sel, html){ const v = sel.value; sel.innerHTML = html; if ([...sel.options].some(o => o.value === v)) sel.value = v; }
 
 function render(){
-  keep($("fPerson"), data.people.length ? options(data.people) : `<option value="">— agregá personas —</option>`);
+  keep($("fPerson"), data.people.length ? options(data.people) : `<option value="">(sin personas en data.json)</option>`);
   keep($("hPerson"), options(data.people, true));
   keep($("hPlace"), options(data.places, true));
   $("sWeeks").value = data.settings.blockWeeks;
   $("sScope").value = data.settings.scope;
-  renderCargar(); renderHist(); renderPlaces(); renderPeople();
+  renderCargar(); renderHist(); renderResumen(); renderNombres();
 }
+
+function renderNombres(){
+  const row = (x, kind) => `<tr><td>${esc(x.name)}</td>
+    <td style="text-align:right;white-space:nowrap">
+      <button class="btn sec small" data-rename="${kind}:${esc(x.id)}">Renombrar</button>
+      <button class="btn danger small" data-del="${kind}:${esc(x.id)}">Borrar</button>
+    </td></tr>`;
+  $("editPeople").innerHTML = data.people.map(p => row(p, "people")).join("") || `<tr><td class="muted">Todavía no hay personas.</td></tr>`;
+  $("editPlaces").innerHTML = data.places.map(p => row(p, "places")).join("") || `<tr><td class="muted">Todavía no hay lugares.</td></tr>`;
+}
+
+function addItem(kind, inputId){
+  const name = $(inputId).value.trim();
+  if (!name) return;
+  if (data[kind].some(x => x.name.toLowerCase() === name.toLowerCase())) return alert("Ese nombre ya está cargado.");
+  data[kind].push({ id: (kind === "people" ? "p" : "l") + uid(), name });
+  $(inputId).value = "";
+  $(inputId).focus();
+  persist();
+}
+$("btnAddPerson").onclick = () => addItem("people", "newPerson");
+$("btnAddPlace").onclick = () => addItem("places", "newPlace");
+$("newPerson").onkeydown = e => { if (e.key === "Enter") addItem("people", "newPerson"); };
+$("newPlace").onkeydown = e => { if (e.key === "Enter") addItem("places", "newPlace"); };
 
 function renderCargar(){
   const pid = $("fPerson").value, date = $("fDate").value || todayStr();
   const { blockWeeks, scope } = data.settings;
-  $("ruleText").textContent = `Regla: no repetir un lugar durante ${blockWeeks === 1 ? "la misma semana" : blockWeeks + " semanas (la de la salida y " + (blockWeeks-1 === 1 ? "la siguiente" : "las " + (blockWeeks-1) + " siguientes") + ")"}, ${scope === "persona" ? "por persona" : "para todo el grupo"}. Ordenado por disponibilidad y menos visitas.`;
+  $("ruleText").textContent = `✅ disponible · ⛔ ya ${scope === "persona" ? "fue esta persona" : "fue alguien del grupo"} ${blockWeeks === 1 ? "esa semana" : "en las últimas " + blockWeeks + " semanas"}. Ordenado por menos visitas. Tocá uno para elegirlo.`;
 
-  const rows = data.places.map(p => {
-    const a = availability(p.id, pid, date);
-    return { p, a, n: countPlace(p.id, scope === "persona" ? pid : null) };
-  }).sort((x, y) => (x.a.blocked - y.a.blocked) || (x.n - y.n) || x.p.name.localeCompare(y.p.name));
+  const rows = data.places.map(p => ({ p, a: availability(p.id, pid, date), n: countPlace(p.id, scope === "persona" ? pid : null) }))
+    .sort((x, y) => (x.a.blocked - y.a.blocked) || (x.n - y.n) || x.p.name.localeCompare(y.p.name));
 
   keep($("fPlace"), rows.length
-    ? rows.map(r => `<option value="${r.p.id}">${r.a.blocked ? "⛔ " : "✅ "}${esc(r.p.name)} (${r.n})</option>`).join("")
-    : `<option value="">— agregá lugares —</option>`);
+    ? rows.map(r => `<option value="${esc(r.p.id)}">${r.a.blocked ? "⛔ " : "✅ "}${esc(r.p.name)} (${r.n})</option>`).join("")
+    : `<option value="">(sin lugares en data.json)</option>`);
 
-  $("suggestions").innerHTML = rows.length ? rows.map(r => `
-    <button data-place="${r.p.id}" class="${r.a.blocked ? "blocked" : ""}">
+  const sel = $("fPlace").value;
+  $("suggestions").innerHTML = rows.map(r => `
+    <button data-place="${esc(r.p.id)}" class="${r.a.blocked ? "blocked" : ""} ${r.p.id === sel ? "sel" : ""}">
       ${r.a.blocked ? "⛔" : "✅"} ${esc(r.p.name)}
       <small>${r.n} ${r.n === 1 ? "vez" : "veces"}${r.a.blocked ? " · libre desde " + fmt(r.a.until) : ""}</small>
-    </button>`).join("") : `<p class="muted">Todavía no hay lugares cargados.</p>`;
+    </button>`).join("");
 }
 
 function renderHist(){
@@ -352,44 +389,39 @@ function renderHist(){
     .sort((a, b) => b.date.localeCompare(a.date));
   $("histBody").innerHTML = list.length ? list.map(v => `
     <tr><td>${fmt(v.date)}</td><td>${esc(personName(v.personId))}</td><td>${esc(placeName(v.placeId))}</td>
-    <td><button class="btn danger small" data-delvisit="${v.id}">Borrar</button></td></tr>`).join("")
+    <td><button class="btn danger small" data-delvisit="${esc(v.id)}">Borrar</button></td></tr>`).join("")
     : `<tr><td colspan="4" class="muted">Sin salidas registradas.</td></tr>`;
 }
 
-function renderPlaces(){
-  const today = todayStr();
-  const list = data.places.slice().sort((a, b) => countPlace(b.id) - countPlace(a.id) || a.name.localeCompare(b.name));
-  $("placesBody").innerHTML = list.length ? list.map(p => {
-    const vs = data.visits.filter(v => v.placeId === p.id);
-    // estado para el grupo (cualquier persona)
-    const target = weekIndex(today);
-    const recent = vs.some(v => Math.abs(target - weekIndex(v.date)) < data.settings.blockWeeks);
-    const pill = recent ? `<span class="pill warn">Visitado hace poco</span>` : `<span class="pill ok">Libre</span>`;
-    return `<tr><td>${esc(p.name)}</td><td>${vs.length}</td><td>${fmt(lastDate(vs))}</td><td>${pill}</td>
-      <td><button class="btn danger small" data-delplace="${p.id}">Borrar</button></td></tr>`;
-  }).join("") : `<tr><td colspan="5" class="muted">Sin lugares.</td></tr>`;
-}
+function renderResumen(){
+  const target = weekIndex(todayStr());
+  $("placesBody").innerHTML = data.places.slice()
+    .sort((a, b) => countPlace(b.id) - countPlace(a.id) || a.name.localeCompare(b.name))
+    .map(p => {
+      const vs = data.visits.filter(v => v.placeId === p.id);
+      const recent = vs.some(v => Math.abs(target - weekIndex(v.date)) < data.settings.blockWeeks);
+      const last = latest(vs);
+      return `<tr><td>${esc(p.name)}</td><td>${vs.length}</td><td>${fmt(last && last.date)}</td>
+        <td>${recent ? `<span class="pill warn">Visitado hace poco</span>` : `<span class="pill ok">Libre</span>`}</td></tr>`;
+    }).join("") || `<tr><td colspan="4" class="muted">Sin lugares.</td></tr>`;
 
-function renderPeople(){
-  const list = data.people.slice().sort((a, b) => a.name.localeCompare(b.name));
-  $("peopleBody").innerHTML = list.length ? list.map(p => {
+  $("peopleBody").innerHTML = data.people.map(p => {
     const vs = data.visits.filter(v => v.personId === p.id);
-    return `<tr><td>${esc(p.name)}</td><td>${vs.length}</td><td>${fmt(lastDate(vs))}</td>
-      <td><button class="btn danger small" data-delperson="${p.id}">Borrar</button></td></tr>`;
-  }).join("") : `<tr><td colspan="4" class="muted">Sin personas.</td></tr>`;
+    const last = latest(vs);
+    return `<tr><td>${esc(p.name)}</td><td>${vs.length}</td><td>${fmt(last && last.date)}</td><td>${last ? esc(placeName(last.placeId)) : "—"}</td></tr>`;
+  }).join("") || `<tr><td colspan="4" class="muted">Sin personas.</td></tr>`;
 }
 
-/* ================== Acciones ================== */
+/* ===== Acciones ===== */
 document.querySelectorAll("nav button").forEach(b => b.onclick = () => {
   document.querySelectorAll("nav button").forEach(x => x.classList.toggle("active", x === b));
   document.querySelectorAll("section").forEach(s => s.classList.toggle("active", s.id === b.dataset.tab));
 });
 
 $("fDate").value = todayStr();
-["fPerson", "fDate"].forEach(id => $(id).addEventListener("change", renderCargar));
+["fPerson", "fDate", "fPlace"].forEach(id => $(id).addEventListener("change", renderCargar));
 ["hPerson", "hPlace"].forEach(id => $(id).addEventListener("change", renderHist));
-
-$("suggestions").onclick = e => { const b = e.target.closest("button[data-place]"); if (b) $("fPlace").value = b.dataset.place; };
+$("suggestions").onclick = e => { const b = e.target.closest("button[data-place]"); if (b){ $("fPlace").value = b.dataset.place; renderCargar(); } };
 
 function showMsg(el, text, kind){ $(el).innerHTML = `<div class="msg ${kind}">${esc(text)}</div>`; }
 
@@ -398,45 +430,52 @@ $("btnAddVisit").onclick = () => {
   if (!personId || !placeId || !date) return showMsg("visitMsg", "Completá persona, fecha y lugar.", "bad");
   const a = availability(placeId, personId, date);
   if (a.blocked){
-    const who = data.settings.scope === "persona" ? personName(personId) : personName(a.conflict.personId);
-    if (!confirm(`⚠️ ${placeName(placeId)} ya fue visitado por ${who} el ${fmt(a.conflict.date)}.\nQueda libre desde el ${fmt(a.until)}.\n\n¿Guardar igual?`)) return;
+    const who = personName(a.conflict.personId);
+    if (!confirm(`⚠️ ${placeName(placeId)}: ya fue ${who} el ${fmt(a.conflict.date)}.\nQueda libre desde el ${fmt(a.until)}.\n\n¿Guardar igual?`)) return;
   }
   data.visits.push({ id: uid(), personId, placeId, date });
   showMsg("visitMsg", `Guardado: ${personName(personId)} → ${placeName(placeId)} (${fmt(date)})`, "ok");
   persist();
 };
 
-$("btnAddPlace").onclick = () => {
-  const n = $("newPlace").value.trim(); if (!n) return;
-  if (data.places.some(p => p.name.toLowerCase() === n.toLowerCase())) return alert("Ese lugar ya existe.");
-  data.places.push({ id: uid(), name: n }); $("newPlace").value = ""; persist();
-};
-$("btnAddPerson").onclick = () => {
-  const n = $("newPerson").value.trim(); if (!n) return;
-  if (data.people.some(p => p.name.toLowerCase() === n.toLowerCase())) return alert("Esa persona ya existe.");
-  data.people.push({ id: uid(), name: n }); $("newPerson").value = ""; persist();
-};
-$("newPlace").onkeydown = e => e.key === "Enter" && $("btnAddPlace").click();
-$("newPerson").onkeydown = e => e.key === "Enter" && $("btnAddPerson").click();
-
 document.body.addEventListener("click", e => {
-  const t = e.target;
-  if (t.dataset.delvisit && confirm("¿Borrar esta salida?")){ data.visits = data.visits.filter(v => v.id !== t.dataset.delvisit); persist(); }
-  if (t.dataset.delplace){
-    const n = countPlace(t.dataset.delplace);
-    if (confirm(`¿Borrar el lugar${n ? " y sus " + n + " salidas" : ""}?`)){
-      data.places = data.places.filter(p => p.id !== t.dataset.delplace);
-      data.visits = data.visits.filter(v => v.placeId !== t.dataset.delplace); persist();
-    }
+  const id = e.target.dataset.delvisit;
+  if (id && confirm("¿Borrar esta salida?")){ data.visits = data.visits.filter(v => v.id !== id); persist(); }
+
+  const ren = e.target.dataset.rename;
+  if (ren){
+    const [kind, xid] = ren.split(":");
+    const item = data[kind].find(x => x.id === xid);
+    const name = prompt("Nuevo nombre:", item.name);
+    if (name && name.trim()){ item.name = name.trim(); persist(); }
   }
-  if (t.dataset.delperson){
-    const n = data.visits.filter(v => v.personId === t.dataset.delperson).length;
-    if (confirm(`¿Borrar a la persona${n ? " y sus " + n + " salidas" : ""}?`)){
-      data.people = data.people.filter(p => p.id !== t.dataset.delperson);
-      data.visits = data.visits.filter(v => v.personId !== t.dataset.delperson); persist();
+
+  const del = e.target.dataset.del;
+  if (del){
+    const [kind, xid] = del.split(":");
+    const item = data[kind].find(x => x.id === xid);
+    const key = kind === "people" ? "personId" : "placeId";
+    const n = data.visits.filter(v => v[key] === xid).length;
+    if (confirm(`¿Borrar "${item.name}"?${n ? `\nTambién se borran sus ${n} salidas guardadas.` : ""}`)){
+      data[kind] = data[kind].filter(x => x.id !== xid);
+      data.visits = data.visits.filter(v => v[key] !== xid);
+      persist();
     }
   }
 });
+
+async function connect(value, msgEl){
+  const t = value.trim();
+  if (!t) return;
+  setToken(t);
+  const ok = await loadData();
+  if (ok) showMsg(msgEl, "Conectado ✓ Ya podés guardar salidas.", "ok");
+  else { showMsg(msgEl, $("status").textContent, "bad"); }
+}
+$("btnTokenQuick").onclick = () => connect($("tokenQuick").value, "tokenMsg");
+$("btnSaveGh").onclick = () => connect($("gToken").value, "ghMsg");
+$("btnForget").onclick = () => { setToken(""); $("gToken").value = ""; $("tokenCard").style.display = "block"; setStatus("Token borrado de este navegador"); };
+$("repoInfo").textContent = `${CONFIG.owner}/${CONFIG.repo} (${CONFIG.path})`;
 
 $("btnSaveRule").onclick = () => {
   data.settings.blockWeeks = Number($("sWeeks").value);
@@ -444,24 +483,10 @@ $("btnSaveRule").onclick = () => {
   persist(); alert("Regla guardada.");
 };
 
-["Owner","Repo","Branch","Path","Token"].forEach(k => $("g"+k).value = gh[k.toLowerCase()] || "");
-$("btnSaveGh").onclick = async () => {
-  gh = { owner: $("gOwner").value.trim(), repo: $("gRepo").value.trim(), branch: $("gBranch").value.trim() || "main",
-         path: $("gPath").value.trim() || "data.json", token: $("gToken").value.trim() };
-  storeGh();
-  await loadData();
-  showMsg("ghMsg", $("status").textContent, $("status").textContent.includes("Error") ? "bad" : "ok");
-};
-$("btnForget").onclick = () => { gh.token = ""; storeGh(); $("gToken").value = ""; setStatus("Token borrado de este navegador"); };
-
 $("btnExport").onclick = () => {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
   a.download = "data.json"; a.click();
-};
-$("fileImport").onchange = async e => {
-  const f = e.target.files[0]; if (!f) return;
-  try { applyData(JSON.parse(await f.text())); persist(); alert("Datos importados."); } catch { alert("El archivo no es un JSON válido."); }
 };
 
 loadData();
