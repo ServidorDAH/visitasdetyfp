@@ -205,6 +205,16 @@ const CONFIG = {
 };
 /* ====================================================== */
 
+// Si la web está en GitHub Pages (usuario.github.io/repo), detecta usuario y repo solos
+(function autodetect(){
+  const host = location.hostname.toLowerCase();
+  if (host.endsWith(".github.io")){
+    CONFIG.owner = host.replace(".github.io", "");
+    const first = location.pathname.split("/").filter(Boolean)[0];
+    CONFIG.repo = first && !first.includes(".") ? first : host;
+  }
+})();
+
 const LS_TOKEN = "salidas_gh_token";
 const DAY = 864e5;
 let data = { people: [], places: [], visits: [], settings: { blockWeeks: 2, scope: "persona" } };
@@ -267,7 +277,7 @@ const authHeaders = () => ({ Authorization: "Bearer " + token, Accept: "applicat
 async function fetchRemote(){
   const r = await fetch(apiUrl() + "?ref=" + encodeURIComponent(CONFIG.branch) + "&t=" + Date.now(), { headers: authHeaders() });
   if (r.status === 401) throw new Error("token inválido o vencido");
-  if (r.status === 404) throw new Error("no encuentro el repo o el archivo (revisá CONFIG y los permisos del token)");
+  if (r.status === 404) throw new Error(`no encuentro ${CONFIG.owner}/${CONFIG.repo}/${CONFIG.path}. Revisá que el token tenga acceso a ese repo y que data.json esté subido`);
   if (!r.ok) throw new Error("GitHub respondió " + r.status);
   return r.json();
 }
