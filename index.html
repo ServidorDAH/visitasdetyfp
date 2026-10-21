@@ -325,7 +325,11 @@ async function saveToGitHub(retry = true){
       sha = (await fetchRemote()).sha;
       return saveToGitHub(false);
     }
-    if (!r.ok) throw new Error("GitHub respondió " + r.status);
+    if (!r.ok){
+      let detail = ""; try { detail = (await r.json()).message || ""; } catch {}
+      if (r.status === 403) throw new Error("el token no tiene permiso de escritura en " + CONFIG.owner + "/" + CONFIG.repo + (detail ? " (" + detail + ")" : ""));
+      throw new Error("GitHub respondió " + r.status + (detail ? " (" + detail + ")" : ""));
+    }
     sha = (await r.json()).content.sha;
     setStatus("Guardado ✓ " + new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }));
   } catch (e){
